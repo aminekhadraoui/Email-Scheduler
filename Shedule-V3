@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome Schedule Planner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #4f46e5;
+            --accent: #f472b6;
+            --background: #0f172a;
+            --text: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(45deg, var(--background), #1e293b);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .title {
+            font-size: 3rem;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-rows: repeat(12, 1fr);
+            gap: 1rem;
+        }
+
+        .time-slot {
+            padding: 0.5rem;
+            text-align: right;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .schedule-content {
+            position: relative;
+            height: 800px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .event {
+            position: absolute;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            padding: 1rem;
+            width: calc(100% - 1rem);
+            left: 0.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .event:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-time {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .add-event-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .add-event-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: relative;
+            background: var(--background);
+            max-width: 500px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 15px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
+        .category-marker {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Daily Planner</h1>
+            <p>Plan your perfect day ✨</p>
+        </div>
+
+        <div class="schedule-grid">
+            <div class="time-slots">
+                <div class="time-slot">8:00 AM</div>
+                <div class="time-slot">9:00 AM</div>
+                <div class="time-slot">10:00 AM</div>
+                <div class="time-slot">11:00 AM</div>
+                <div class="time-slot">12:00 PM</div>
+                <div class="time-slot">1:00 PM</div>
+                <div class="time-slot">2:00 PM</div>
+                <div class="time-slot">3:00 PM</div>
+                <div class="time-slot">4:00 PM</div>
+                <div class="time-slot">5:00 PM</div>
+                <div class="time-slot">6:00 PM</div>
+            </div>
+            <div class="schedule-content" id="schedule">
+                <!-- Events will be added here dynamically -->
+            </div>
+        </div>
+
+        <div class="add-event-btn" id="addEventBtn">
+            <i class="fas fa-plus"></i>
+        </div>
+
+        <div class="modal" id="eventModal">
+            <div class="modal-content">
+                <span class="close-btn" id="closeModal">&times;</span>
+                <h2>Add New Event</h2>
+                <form id="eventForm">
+                    <div class="form-group">
+                        <label>Event Title</label>
+                        <input type="text" id="eventTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="time" id="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (hours)</label>
+                        <input type="number" id="duration" min="0.5" max="4" step="0.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="category">
+                            <option value="work">Work</option>
+                            <option value="personal">Personal</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="break">Break</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="add-event-btn">Add Event</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Schedule {
+            constructor() {
+                this.schedule = document.getElementById('schedule');
+                this.modal = document.getElementById('eventModal');
+                this.eventForm = document.getElementById('eventForm');
+                this.events = JSON.parse(localStorage.getItem('scheduleEvents')) || [];
+                
+                this.init();
+            }
+
+            init() {
+                document.getElementById('addEventBtn').addEventListener('click', () => this.toggleModal());
+                document.getElementById('closeModal').addEventListener('click', () => this.toggleModal());
+                this.eventForm.addEventListener('submit', (e) => this.handleSubmit(e));
+                this.renderEvents();
+            }
+
+            toggleModal() {
+                this.modal.style.display = this.modal.style.display === 'block' ? 'none' : 'block';
+            }
+
+            handleSubmit(e) {
+                e.preventDefault();
+                const newEvent = {
+                    title: document.getElementById('eventTitle').value,
+                    start: document.getElementById('startTime').value,
+                    duration: document.getElementById('duration').value,
+                    category: document.getElementById('category').value
+                };
+                this.events.push(newEvent);
+                localStorage.setItem('scheduleEvents', JSON.stringify(this.events));
+                this.renderEvents();
+                this.toggleModal();
+                this.eventForm.reset();
+            }
+
+            renderEvents() {
+                this.schedule.innerHTML = '';
+                this.events.forEach(event => {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'event';
+                    eventElement.innerHTML = `
+                        <div class="event-title">${event.title}</div>
+                        <div class="event-time">${this.formatTime(event.start)} - ${this.calculateEndTime(event)}</div>
+                        <div class="category-marker" style="background: ${this.getCategoryColor(event.category)}"></div>
+                    `;
+                    
+                    const startHour = parseInt(event.start.split(':')[0]);
+                    const startMinutes = parseInt(event.start.split(':')[1]);
+                    const topPosition = (startHour - 8 + startMinutes/60) * 60;
+                    const height = event.duration * 60;
+                    
+                    eventElement.style.top = `${topPosition}px`;
+                    eventElement.style.height = `${height}px`;
+                    
+                    this.schedule.appendChild(eventElement);
+                });
+            }
+
+            formatTime(timeString) {
+                const [hours, minutes] = timeString.split(':');
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const formattedHours = hours % 12 || 12;
+                return `${formattedHours}:${minutes} ${period}`;
+            }
+
+            calculateEndTime(event) {
+                const start = new Date(`2000-01-01T${event.start}`);
+                const end = new Date(start.getTime() + event.duration * 60 * 60 * 1000);
+                return this.formatTime(end.toTimeString().slice(0,5));
+            }
+
+            getCategoryColor(category) {
+                const colors = {
+                    work: '#6366f1',
+                    personal: '#f472b6',
+                    meeting: '#10b981',
+                    break: '#f59e0b'
+                };
+                return colors[category];
+            }
+        }
+
+        // Initialize the schedule
+        const schedule = new Schedule();
+    </script>
+</body>
+</html>
