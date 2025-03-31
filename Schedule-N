@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Schedule Planner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3B82F6;
+            --secondary: #6366F1;
+            --accent: #10B981;
+            --background: #F8FAFC;
+            --text: #1E293B;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .timeline {
+            position: relative;
+            height: 720px;
+            margin-left: 100px;
+        }
+
+        .time-marker {
+            position: absolute;
+            width: calc(100% - 40px);
+            border-top: 2px dashed #E2E8F0;
+            left: 40px;
+        }
+
+        .time-label {
+            position: absolute;
+            left: -80px;
+            transform: translateY(-50%);
+            color: #64748B;
+        }
+
+        .events-container {
+            position: relative;
+            height: 100%;
+        }
+
+        .event {
+            position: absolute;
+            background: white;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 1rem;
+            width: 250px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            cursor: move;
+        }
+
+        .event:hover {
+            transform: translateY(-2px);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-type {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            background: #EFF6FF;
+            color: var(--primary);
+        }
+
+        .event-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-time {
+            color: #64748B;
+            font-size: 0.9rem;
+        }
+
+        .add-btn {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s;
+        }
+
+        .add-btn:hover {
+            opacity: 0.9;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 400px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .color-option.selected {
+            border-color: var(--text);
+        }
+
+        .draggable-mirror {
+            opacity: 0.8;
+            transform: rotate(3deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Schedule Timeline</h1>
+            <button class="add-btn" id="addEvent">
+                <i class="fas fa-plus"></i>
+                Add Event
+            </button>
+        </div>
+
+        <div class="timeline">
+            <div class="events-container" id="eventsContainer">
+                <!-- Events will be added here -->
+            </div>
+            <!-- Time markers -->
+            <div class="time-marker" style="top: 0">
+                <span class="time-label">8:00 AM</span>
+            </div>
+            <div class="time-marker" style="top: 60px">
+                <span class="time-label">9:00 AM</span>
+            </div>
+            <!-- Add more time markers... -->
+        </div>
+
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal">
+                <h2 style="margin-bottom: 1rem">Create New Event</h2>
+                <form id="eventForm">
+                    <div style="margin-bottom: 1rem">
+                        <label>Event Title</label>
+                        <input type="text" id="eventTitle" required 
+                               style="width: 100%; padding: 0.5rem; margin-top: 0.5rem">
+                    </div>
+                    <div style="margin-bottom: 1rem">
+                        <label>Start Time</label>
+                        <input type="time" id="eventTime" required 
+                               style="width: 100%; padding: 0.5rem; margin-top: 0.5rem">
+                    </div>
+                    <div style="margin-bottom: 1rem">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="eventDuration" required min="15" max="240" 
+                               style="width: 100%; padding: 0.5rem; margin-top: 0.5rem">
+                    </div>
+                    <div class="color-palette">
+                        <div class="color-option" style="background: #3B82F6" data-color="#3B82F6"></div>
+                        <div class="color-option" style="background: #10B981" data-color="#10B981"></div>
+                        <div class="color-option" style="background: #F59E0B" data-color="#F59E0B"></div>
+                        <div class="color-option" style="background: #EF4444" data-color="#EF4444"></div>
+                    </div>
+                    <button type="submit" style="width: 100%; padding: 0.75rem; background: var(--primary); color: white; border: none; border-radius: 8px; margin-top: 1rem">
+                        Create Event
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Scheduler {
+            constructor() {
+                this.events = JSON.parse(localStorage.getItem('events')) || [];
+                this.selectedColor = '#3B82F6';
+                this.init();
+            }
+
+            init() {
+                document.getElementById('addEvent').addEventListener('click', () => this.toggleModal());
+                document.getElementById('modalOverlay').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('modalOverlay')) this.toggleModal();
+                });
+                document.getElementById('eventForm').addEventListener('submit', (e) => this.handleSubmit(e));
+                document.querySelectorAll('.color-option').forEach(option => {
+                    option.addEventListener('click', () => this.selectColor(option));
+                });
+                this.renderEvents();
+                this.initDragAndDrop();
+            }
+
+            toggleModal() {
+                const modal = document.getElementById('modalOverlay');
+                modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+            }
+
+            selectColor(option) {
+                document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                this.selectedColor = option.dataset.color;
+            }
+
+            handleSubmit(e) {
+                e.preventDefault();
+                const newEvent = {
+                    id: Date.now(),
+                    title: document.getElementById('eventTitle').value,
+                    start: document.getElementById('eventTime').value,
+                    duration: document.getElementById('eventDuration').value,
+                    color: this.selectedColor
+                };
+                this.events.push(newEvent);
+                localStorage.setItem('events', JSON.stringify(this.events));
+                this.renderEvents();
+                this.toggleModal();
+                e.target.reset();
+            }
+
+            renderEvents() {
+                const container = document.getElementById('eventsContainer');
+                container.innerHTML = '';
+                
+                this.events.forEach(event => {
+                    const eventEl = document.createElement('div');
+                    eventEl.className = 'event';
+                    eventEl.innerHTML = `
+                        <div class="event-header">
+                            <span class="event-type" style="background: ${event.color}20; color: ${event.color}">
+                                ${event.title.split(' ')[0]}
+                            </span>
+                            <i class="fas fa-times" data-id="${event.id}"></i>
+                        </div>
+                        <div class="event-title">${event.title}</div>
+                        <div class="event-time">${this.formatTime(event.start)} - ${this.calculateEndTime(event)}</div>
+                    `;
+                    
+                    const startHours = parseInt(event.start.split(':')[0]);
+                    const startMinutes = parseInt(event.start.split(':')[1]);
+                    const topPosition = (startHours - 8) * 60 + startMinutes;
+                    const height = event.duration;
+                    
+                    eventEl.style.top = `${topPosition}px`;
+                    eventEl.style.height = `${height}px`;
+                    eventEl.style.borderColor = event.color;
+                    
+                    container.appendChild(eventEl);
+                });
+
+                document.querySelectorAll('.fa-times').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.deleteEvent(e));
+                });
+            }
+
+            formatTime(timeString) {
+                const [hours, minutes] = timeString.split(':');
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const formattedHours = hours % 12 || 12;
+                return `${formattedHours}:${minutes.padStart(2, '0')} ${period}`;
+            }
+
+            calculateEndTime(event) {
+                const start = new Date(`2000-01-01T${event.start}`);
+                const end = new Date(start.getTime() + event.duration * 60000);
+                return this.formatTime(end.toTimeString().slice(0,5));
+            }
+
+            deleteEvent(e) {
+                const id = parseInt(e.target.dataset.id);
+                this.events = this.events.filter(event => event.id !== id);
+                localStorage.setItem('events', JSON.stringify(this.events));
+                this.renderEvents();
+            }
+
+            initDragAndDrop() {
+                interact('.event').draggable({
+                    inertia: true,
+                    modifiers: [
+                        interact.modifiers.restrictRect({
+                            restriction: 'parent',
+                            endOnly: true
+                        })
+                    ],
+                    listeners: {
+                        move: (event) => {
+                            const target = event.target;
+                            const x = (parseFloat(target.style.left) || 0) + event.dx;
+                            const y = (parseFloat(target.style.top) || 0) + event.dy;
+                            
+                            target.style.left = `${x}px`;
+                            target.style.top = `${y}px`;
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize the scheduler
+        const scheduler = new Scheduler();
+    </script>
+</body>
+</html>
