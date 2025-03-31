@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Email Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Email Scheduler</h2>
+        <button onclick="scheduleEmail()">Schedule Email</button>
+        <p id="status"></p>
+    </div>
+
+    <!-- Include EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+        // Initialize EmailJS with your USER ID
+        emailjs.init('YOUR_EMAILJS_USER_ID');
+
+        function scheduleEmail() {
+            document.getElementById('status').textContent = "Email scheduled (will send in 1 minute)...";
+            
+            setTimeout(() => {
+                emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+                    to_email: 'your-email@example.com',
+                    message: 'This email was sent securely!'
+                }).then(() => {
+                    document.getElementById('status').textContent = "Email sent successfully!";
+                }).catch((error) => {
+                    document.getElementById('status').textContent = "Error: " + error.text;
+                });
+            }, 60000); // 60 seconds
+        }
+    </script>
+</body>
+</html>
